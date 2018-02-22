@@ -306,6 +306,11 @@ int main(int argc, const char * argv[])
         } else printf("couldnt open (%s)\n",argv[2]);
         exit(0);
     }
+    else if ( argv[1] != 0 && strcmp(argv[1],"convwif") == 0 && argv[2] != 0 )
+    {
+        // TODO: convwif utility
+    }
+
     sprintf(dirname,"%s",GLOBAL_DBDIR), OS_ensure_directory(dirname);
     if ( ensure_writable(dirname) < 0 )
         exit(0);
