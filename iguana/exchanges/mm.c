@@ -308,7 +308,9 @@ int main(int argc, const char * argv[])
     }
     else if ( argv[1] != 0 && strcmp(argv[1],"convwif") == 0 && argv[2] != 0 )
     {
-        // TODO: convwif utility
+        // hardcoded to KMD for now
+        bitcoin_wif2priv("KMD",wiftaddr,&addrtype,&V->signers[ind].privkey,wifstr);
+        bitcoin_priv2wif("KMD",coin->wiftaddr,wifstr,G.LP_privkey,coin->wiftype);
     }
 
     sprintf(dirname,"%s",GLOBAL_DBDIR), OS_ensure_directory(dirname);
