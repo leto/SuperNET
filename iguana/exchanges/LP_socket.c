@@ -51,16 +51,30 @@ int32_t set_blocking_mode(int32_t sock,int32_t is_blocking) // from https://stac
 int32_t komodo_connect(int32_t sock,struct sockaddr *saddr,socklen_t addrlen)
 {
     struct timeval tv; fd_set wfd,efd; int32_t res,so_error; socklen_t len;
-    fcntl(sock,F_SETFL,O_NONBLOCK);
+#ifdef _WIN32
+    set_blocking_mode(sock, 0);
+#else
+    fcntl(sock, F_SETFL, O_NONBLOCK);
+#endif // _WIN32
     res = connect(sock,saddr,addrlen);
+
     if ( res == -1 )
     {
-        if ( errno != EINPROGRESS ) // connect failed, do something...
+#ifdef _WIN32
+		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms737625%28v=vs.85%29.aspx - read about WSAEWOULDBLOCK return
+		errno = WSAGetLastError();
+		printf("[Decker] errno.%d --> ", errno);
+		if ( errno != EINPROGRESS && errno != WSAEWOULDBLOCK ) // connect failed, do something...
+#else
+		if ( errno != EINPROGRESS ) // connect failed, do something...
+#endif
         {
-            closesocket(sock);
+			printf("close socket ...\n");
+			closesocket(sock);
             return(-1);
         }
-        FD_ZERO(&wfd);
+		printf("continue with select ...\n");
+		FD_ZERO(&wfd);
         FD_SET(sock,&wfd);
         FD_ZERO(&efd);
         FD_SET(sock,&efd);
@@ -86,7 +100,7 @@ int32_t komodo_connect(int32_t sock,struct sockaddr *saddr,socklen_t addrlen)
         }
     }
     set_blocking_mode(sock,1);
-    return(sock);
+    return(0);
 }
 
 int32_t LP_socket(int32_t bindflag,char *hostname,uint16_t port)
@@ -196,7 +210,7 @@ int32_t LP_socket(int32_t bindflag,char *hostname,uint16_t port)
         timeout.tv_sec = 2;
         timeout.tv_usec = 0;
         setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(void *)&timeout,sizeof(timeout));
-        if ( result != 0 )
+        /*if ( result != 0 )
         {
             if ( errno != ECONNRESET && errno != ENOTCONN && errno != ECONNREFUSED && errno != ETIMEDOUT && errno != EHOSTUNREACH )
             {
@@ -205,7 +219,7 @@ int32_t LP_socket(int32_t bindflag,char *hostname,uint16_t port)
             if ( sock >= 0 )
                 closesocket(sock);
             return(-1);
-        }
+        }*/
         timeout.tv_sec = 10;
         timeout.tv_usec = 0;
         setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(void *)&timeout,sizeof(timeout));
